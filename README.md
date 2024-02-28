@@ -1,4 +1,4 @@
-To run the script in an IDE:
+To run the script from an IDE:
 * Simply open the script and run it.
 * Open your browser and acess the dashboard at http://localhost:8080
 
