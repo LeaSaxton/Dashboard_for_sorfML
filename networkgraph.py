@@ -15,26 +15,71 @@ import seaborn as sns                                       # For colour palette
 # property is target property which is changed
 # condition is original condition before chenged
 def setFilterCondition( value, target, condition ):
+    # Convert None as string
+    if value == None: value = 'None'
+
     # Remove white space, '[' and ']'
     condition_updated = condition
-    condition_updated = condition_updated.replace( ' ', '')
+    #condition_updated = condition_updated.replace( ' ', '' )
     condition_updated = condition_updated[ 1 : -1 ]
-    print( condition_updated )
 
-    # Make it Array with the delimiter '&'
+    # Make it Array with the delimiter ']['
     condition_updated_array = condition_updated.split( '][' )
+
+    # If temperature is decoy(temperature_integer>999999), remove it
+    decoy = 'temperature_integer>999999'
+    if decoy in condition_updated_array:
+        condition_updated_array.remove( decoy )
     print( condition_updated_array )
 
-    # Find target property and change!
-    for i in range( len( condition_updated_array ) ):
-        if target in condition_updated_array[ i ]:
+    # Check if this filter condition already exist
+    condition_exist = False
+    for element in condition_updated_array:
+        if target in element: condition_exist = True
+
+    # Add the new condition
+    if condition_exist == False:
+        print( target, 'does not exist' )
+        if target == 'owner' or target == 'product_name':
+            print( '... and target is owner or product name' )
+            target_updated = target + '="' + value + '"'
+            condition_updated_array.append( target_updated )
+        else:
+            print( '... and taget is neither owner nor product name' )
             target_updated = target + '>' + value
-            condition_updated_array[ i ] = target_updated
-            break
+            condition_updated_array.append( target_updated )
+
+    # Modify the existing condition
+    if condition_exist == True:
+        print( target, 'does exists' )
+        for i in range( len( condition_updated_array ) ):
+            if target in condition_updated_array[ i ]:
+                if target == 'owner' or target == 'product_name':
+                    print( '... and target is owner or product name' )
+                    target_updated = target + '="' + value + '"'
+                    condition_updated_array[ i ] = target_updated
+                    break
+                else:
+                    print( '... and target is neither owner nor product name' )
+                    target_updated = target + '>' + value
+                    condition_updated_array[ i ] = target_updated
+                    break
+
+    # If an element contains 'None' type, remove it
+    for element in condition_updated_array:
+        if 'None' in element:
+            print( 'None type found:', element )
+            condition_updated_array.remove( element )
+    print('after removed:', condition_updated_array)
+    print( len( condition_updated_array ) )
 
     # Combine all the elements of array to String again
-    delimiter = ']['
-    result    = delimiter.join( condition_updated_array )
+    result = ''
+    if len( condition_updated_array ) == 0:
+        result = 'temperature_integer>999999'
+    else:
+        delimiter = ']['
+        result    = delimiter.join( condition_updated_array )
 
     # Add '[' and ']'
     result = '[' + result + ']'
@@ -42,22 +87,6 @@ def setFilterCondition( value, target, condition ):
     print( 'RESULT:' )
     print( result )
     return result
-
-
-def setHighlightedNodes( condition, nodes ):
-    nodes_updated = nodes
-
-    # Reset highlight condition
-    for i in range( len( nodes ) ):nodes_updated[ i ][ 'data' ][ 'highlighted' ] = 'false'
-
-    
-    for i in range( len( nodes ) ):
-        temperature     = condition[ 'temperature' ]
-        temperature_int = int( temperature )
-        if nodes_updated[ i ][ 'data' ][ 'temperature_integer' ] > temperature_int:
-            nodes_updated[ i ][ 'data' ][ 'highlighted' ] = 'true'
-
-    return nodes_updated
 
 def showContent( content ):
     print( '\n\nContent:' )
@@ -68,10 +97,13 @@ def showContent( content ):
 # ----------------------------------------------------------------- #
 
 # Read JSON file as raw txt data
-file_input = open( 'tx_monitor.json.txt' )
+file_input = open( 'tx_monitor_milk_V2.json.txt' )
 
 # Load and parse the JSON data
 json_data = json.load( file_input )
+
+# Pick up branches object
+json_data = json_data[ 'branches' ]
 
 # Loop to print every single object
 #for object in json_data: print( object )
@@ -154,49 +186,91 @@ for object in json_data:
     }
     nodes.append( { 'data' : data } )
 
-# Add another property named 'colour' to colourise nodes
-# Set list of organisation at the first place
+# 1.   Add another property named 'colour' to colourise nodes
+# 1-1. Set list of organisation at the first place
 owner_list = [ object[ 'data' ][ 'owner' ] for object in nodes ]
 owner_list = list( set( owner_list ) )
 
-# Make colour palette using seaborn
+# 1-2. Make colour palette using seaborn
 colour_palette = sns.color_palette( 'husl', len( owner_list ) )
 colour_palette = colour_palette.as_hex()
 print( colour_palette )
 
-# Make a dictionary to connect org name and its colour
+# 1-3. Make a dictionary to connect org name and its colour
 label_color_dict = {}
 for i in range( len( owner_list ) ) : label_color_dict[ owner_list[ i ] ] = colour_palette[ i ]
 print( label_color_dict )
 
-# Then, assign all the colour list 
+# 1-4. Then, assign all the colour list 
 for object in nodes:
     # Define color for the organisation
     colour = label_color_dict[ object[ 'data' ][ 'owner' ] ]
     # Append new property 'colour'
     object[ 'data' ][ 'colour_owner' ] = colour
 
-# Add another property named 'colour' to colourise nodes
-# Set list of organisation at the first place
+# 2.   Add another property named 'colour' to colourise nodes
+# 2-1. Set list of organisation at the first place
 product_list = [ object[ 'data' ][ 'product_name' ] for object in nodes ]
 product_list = list( set( product_list ) )
 
-# Make colour palette using seaborn
+# 2-2. Make colour palette using seaborn
 colour_palette = sns.color_palette( 'husl', len( product_list ) )
 colour_palette = colour_palette.as_hex()
 print( colour_palette )
 
-# Make a dictionary to connect org name and its colour
+# 2-3. Make a dictionary to connect org name and its colour
 label_color_dict = {}
 for i in range( len( product_list ) ) : label_color_dict[ product_list[ i ] ] = colour_palette[ i ]
 print( label_color_dict )
 
-# Then, assign all the colour list 
+# 2-4. Then, assign all the colour list 
 for object in nodes:
     # Define color for the organisation
     colour = label_color_dict[ object[ 'data' ][ 'product_name' ] ]
     # Append new property 'colour'
     object[ 'data' ][ 'colour_product' ] = colour
+
+# 3.   Add another property named 'colour' to colourise nodes
+# 3-1. Set list of organisation at the first place
+location_list = [ object[ 'data' ][ 'location' ] for object in nodes ]
+location_list = list( set( location_list ) )
+
+# 3-2. Make colour palette using seaborn
+colour_palette = sns.color_palette( 'husl', len( location_list ) )
+colour_palette = colour_palette.as_hex()
+print( colour_palette )
+
+# 3-3. Make a dictionary to connect org name and its colour
+label_color_dict = {}
+for i in range( len( location_list ) ) : label_color_dict[ location_list[ i ] ] = colour_palette[ i ]
+print( label_color_dict )
+
+# 3-4. Then, assign all the colour list 
+for object in nodes:
+    # Define color for the organisation
+    colour = label_color_dict[ object[ 'data' ][ 'location' ] ]
+    # Append new property 'colour'
+    object[ 'data' ][ 'colour_location' ] = colour
+
+# 4.  Create Owner list for the owner filter
+# 4-1. Define blank array
+owner_dropdown = []
+
+# 4-2. Create owner dictionary for drop down
+#      Reuse the 'owner_list' variable which was defined in 1-1.
+for owner in owner_list:
+    dictionary_owner = { 'label' : owner, 'value' : owner }
+    owner_dropdown.append( dictionary_owner )
+
+# 5.   Create product list for the owner filter
+# 5-1. Define blank array
+product_dropdown = []
+
+# 5-2. Create owner dictionary for drop down
+#      Reuse the 'product_list' variable which was defined in 1-1.
+for product in product_list:
+    dictionary_product = { 'label' : product, 'value' : product }
+    product_dropdown.append( dictionary_product )
 
 print( nodes )
 
@@ -222,13 +296,18 @@ network_stylesheet = [
     { # Basic style for nodes
         'selector' : 'node',
         'style'    : {
-            'color'            : '#30475E',
-            'border-width'     : 3,
-            'border-color'     : '#211951',
-            'background-color' : 'data(colour_owner)',
-            'label'            : 'data(owner)',
-            'width'            : 'data(node_size_weight)',
-            'height'           : 'data(node_size_weight)'
+            'color'              : '#30475E',
+            'border-width'       : 3,
+            'border-color'       : '#211951',
+            'background-color'   : 'data(colour_owner)',
+            'label'              : 'data(owner)',
+            #'font-size'          : '15px',
+            'text-outline-color' : 'white',
+            'text-outline-width' : '2px',
+            #'text-halign'        : 'center',
+            #'text-valign'        : 'center',
+            'width'              : 'data(node_size_weight)',
+            'height'             : 'data(node_size_weight)'
         }
     },
     { # Basic style for edges
@@ -242,12 +321,15 @@ network_stylesheet = [
         'style'    : {}
     },
     { # Additional style: if tempetature > n, the nodes are red
-        'selector' : '[ temperature_integer > 999999 ][ weight_integer > 999999 ]',
+        'selector' : '[temperature_integer>999999]', # Dummy!
         'style'    : {
             'border-color'     : 'red',
-            'background-color' : '#FF4A4A'
+            'background-color' : '#FF4A4A',
+            'shape'            : 'triangle',
+            'width'            : '80px',
+            'height'           : '80px'
         }
-    },
+    }
 ]
 
 # Set app layout
@@ -305,6 +387,14 @@ styles = {
         'borderColor'     : '#CFD2CF',
         'backgroundColor' : '#EEEEEE',
         'borderRadius'    : '4px'
+    },
+    # Network graph reset button note
+    'reset-note' : {
+        'fontSize'     : '14px',
+        'color'        : '#424769',
+        'marginTop'    : '18px',
+        'marginBottom' : '2px',
+        'marginLeft'   : '4px',
     },
     # Network graph reset button style
     'reset-button' : {
@@ -372,8 +462,9 @@ app.layout = html.Div([
                 dcc.Dropdown(
                     id      = 'nodecolour-dropdown',
                     options = [
-                        { 'label' : 'Owner',        'value' : 'data(colour_owner)'   },
-                        { 'label' : 'Product name', 'value' : 'data(colour_product)' }
+                        { 'label' : 'Owner',        'value' : 'data(colour_owner)'    },
+                        { 'label' : 'Product name', 'value' : 'data(colour_product)'  },
+                        { 'label' : 'Location',     'value' : 'data(colour_location)' }
                     ],
                     value     = 'data(colour_owner)',
                     clearable = False,
@@ -402,7 +493,31 @@ app.layout = html.Div([
                     style       = styles[ 'number-input' ]
                 )
             ),
+            # Owner organisation filter dropdown
+            html.P( 'Owner filter', style = styles[ 'dropdown-title' ] ),
+            html.Div(
+                dcc.Dropdown(
+                    id        = 'ownerfilter-dropdown',
+                    options   = owner_dropdown,
+                    clearable = True,
+                    style     = styles[ 'dropdown' ]
+                )
+            ),
+            # Product name filter dropdown
+            html.P( 'Product filter', style = styles[ 'dropdown-title' ] ),
+            html.Div(
+                dcc.Dropdown(
+                    id        = 'productfilter-dropdown',
+                    options   = product_dropdown,
+                    clearable = True,
+                    style     = styles[ 'dropdown' ]
+                )
+            ),
             # Network graph reset button
+            html.P(
+                'If the filter does not seem to work, push Reset Filter below and try again.',
+                style = styles[ 'reset-note' ]
+            ),
             html.Button(
                 'Reset Filter',
                 id       = 'reset-button',
@@ -436,6 +551,7 @@ def displayTapNodeData( data ):
            'Timestamp: '       + data[ 'timestamp'    ]
 
 # Callback to change network graph style from pull down
+''' THIS CODE BLOCK IS NOT USED ANYMORE !!!
 @callback(
     Output( 'network-gragh',         'layout' ),
     Input(  'networkstyle-dropdown', 'value'  ),
@@ -446,6 +562,7 @@ def changeNetworkStylePullDown( selected_value ):
         'name'  : selected_value,
         'roots' : '[ previous_hash *= "GenesisBlock" ]'
     }
+'''
 
 # Callback to change node size from pull down
 @callback(
@@ -474,6 +591,8 @@ def changeNodeColourPullDown( selected_value ):
         network_stylesheet_updated[ 0 ][ 'style' ][ 'label' ] = 'data(owner)'
     elif selected_value == 'data(colour_product)':
         network_stylesheet_updated[ 0 ][ 'style' ][ 'label' ] = 'data(product_name)'
+    elif selected_value == 'data(colour_location)':
+        network_stylesheet_updated[ 0 ][ 'style' ][ 'label' ] = 'data(location)'
 
     return network_stylesheet_updated
 
@@ -490,6 +609,42 @@ def setFilterTemperatureInput( input_value ):
     network_stylesheet_updated[ 3 ][ 'selector' ] = setFilterCondition(
         str( input_value ),
         'temperature_integer',
+        network_stylesheet_updated[ 3 ][ 'selector' ]
+    )
+
+    return network_stylesheet_updated
+
+# Callback to update organisation filter
+@callback(
+    Output( 'network-gragh', 'stylesheet', allow_duplicate = True ),
+    Input( 'ownerfilter-dropdown', 'value' ),
+    prevent_initial_call = True # This is needy to allow duplication of callback output
+)
+def setFilterTemperatureInput( input_value ):
+    network_stylesheet_updated = network_stylesheet
+
+    # Update temperature condition
+    network_stylesheet_updated[ 3 ][ 'selector' ] = setFilterCondition(
+        input_value,
+        'owner',
+        network_stylesheet_updated[ 3 ][ 'selector' ]
+    )
+
+    return network_stylesheet_updated
+
+# Callback to update product name filter
+@callback(
+    Output( 'network-gragh', 'stylesheet', allow_duplicate = True ),
+    Input( 'productfilter-dropdown', 'value' ),
+    prevent_initial_call = True # This is needy to allow duplication of callback output
+)
+def setFilterTemperatureInput( input_value ):
+    network_stylesheet_updated = network_stylesheet
+
+    # Update temperature condition
+    network_stylesheet_updated[ 3 ][ 'selector' ] = setFilterCondition(
+        input_value,
+        'product_name',
         network_stylesheet_updated[ 3 ][ 'selector' ]
     )
 
@@ -522,8 +677,7 @@ def setFilterWeightInput( input_value ):
 def resetNetworkStyleButton( button_n_clicks ):
     if button_n_clicks > 0 :
         network_stylesheet_updated = network_stylesheet
-        condition = '[ temperature_integer > 999999 ] \
-                     [ weight_integer      > 999999 ]'
+        condition = '[temperature_integer>999999]'
         network_stylesheet_updated[ 3 ][ 'selector' ] = condition
         return network_stylesheet_updated
 
