@@ -2,31 +2,31 @@
 #Author: Léa Saxton
 #Date: 19/02/2024
 
-#Import Library
+# Import Library
 import pandas as pd 
 import numpy as np
 import os
 import dash
-from dash import Dash, dash_table, html, dcc
+from   dash import Dash, dash_table, html, dcc
 import dash_bootstrap_components as dbc
 import plotly.express as px
-from datetime import datetime as dt 
-from geopy.geocoders import Nominatim
-from dash.dependencies import Input, Output
+from   datetime import datetime as dt 
+from   geopy.geocoders import Nominatim
+from   dash.dependencies import Input, Output
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from   plotly.subplots import make_subplots
 import warnings
 import dash_cytoscape as cyto
 import json
 
 # Import networkgraph utils
-from networkgraph_util import create_networkgraph_inputdata, get_nodes, set_node_colours, get_edges, set_networkgraph_default_stylesheet, set_networkgraph_tab_layout
+from networkgraph_util import create_networkgraph_inputdata, get_nodes, set_node_colours, get_edges, set_networkgraph_default_stylesheet, set_networkgraph_tab_layout, setFilterCondition
 
 # Show content of call back variables
 def show_content(content):
     print(content) 
 
-#Opening data and save it in pandas dataframe
+# Opening data and save it in pandas dataframe
 with open('./testdata/tx_monitor_milk_V2.json.txt') as file:
         data_json = json.load(file)
         # Pick up 'txHistory' object
@@ -174,10 +174,10 @@ app.layout = dbc.Container(
         #html.Div('Navigate Between Tabs To Explore Your Products Parameters', style={'color': 'white'}),
         dbc.Alert(
             f"Warning: Temperature values for the following products are not constant: {', '.join(products_with_inconstant_temperature)}",
-            id          = 'alert',
+            id          = 'alert_temperature',
             color       = 'danger',
             dismissable = True,
-            is_open     = False 
+            is_open     = False
         ),
         dbc.Alert(
             f"Warning: Weight values for the following products are not constant: {', '.join(products_with_inconstant_weight)}",
@@ -473,6 +473,44 @@ def hide_tabs(active_tab):
             'background-color' : 'white',
         }
 
+# Callback to to hide temperature alert if 'tab2' is pushed
+@app.callback(
+    Output('alert_temperature', 'is_open'),
+    Input('main-tabs', 'active_tab')
+)
+def hide_alart_temp(active_tab):
+    if   active_tab == 'tab2': return False
+    elif active_tab == 'tab1': return True
+
+# Callback to to hide weight alert if 'tab2' is pushed
+@app.callback(
+    Output('alert_weight', 'is_open'),
+    Input('main-tabs', 'active_tab')
+)
+def hide_alart_weight(active_tab):
+    if   active_tab == 'tab2': return False
+    elif active_tab == 'tab1': return True
+
+# Callback to to hide expired alert if 'tab2' is pushed
+@app.callback(
+    Output('alert_expired', 'is_open'),
+    Input('main-tabs', 'active_tab')
+)
+def hide_alart_expired(active_tab):
+    if   active_tab == 'tab2': return False
+    elif active_tab == 'tab1': return True
+
+# Callback to display data on the top-right window
+@app.callback( Output( 'block-content', 'children' ), Input( 'network-gragh', 'mouseoverNodeData' ) )
+def displayTapNodeData( data ):
+    return 'Product Name: '    + data[ 'product_name' ] + '\n' + \
+           'Product ID: '      + data[ 'product_id'   ] + '\n' + \
+           'Owner: '           + data[ 'owner'        ] + '\n' + \
+           'Weight (Kg): '     + data[ 'weight'       ] + '\n' + \
+           'Temperature (℃): ' + data[ 'temperature'  ] + '\n' + \
+           'Location: '        + data[ 'location'     ] + '\n' + \
+           'Timestamp: '       + data[ 'timestamp'    ]
+
 @app.callback(
     Output("alert", "is_open"),
     [Input("store", "data")]
@@ -481,23 +519,23 @@ def update_alert(data):
     inconsistent_products = [product for product in df_txhistory['ProductID'].unique() if not is_constant_temperature(product)]
     return len(inconsistent_products) > 0
 
-@app.callback(
-    Output("alert_weight", "is_open"),
-    [Input("store", "data")]
-)
-def weight_alert(data):
-    inconsistent_products = [product for product in df_txhistory['ProductID'].unique() if not is_constant_weight(product)]
-    return len(inconsistent_products) > 0
+#@app.callback(
+#    Output("alert_weight", "is_open"),
+#    [Input("store", "data")]
+#)
+#def weight_alert(data):
+#    inconsistent_products = [product for product in df_txhistory['ProductID'].unique() if not is_constant_weight(product)]
+#    return len(inconsistent_products) > 0
 
-@app.callback(
-    Output("alert_expired", "is_open"),
-    [Input("store", "data")]
-)
-def product_expired(data):
-    expiry_dates = pd.to_datetime(df_txhistory['UseByDate'].unique()).date
-    current_date = dt.now().date()
-    expired_products = [product for product in df_txhistory['ProductID'].unique() if pd.to_datetime(df_txhistory[df_txhistory['ProductID'] == product]['UseByDate'].iloc[0]).date() <= current_date]
-    return len(expired_products)>0
+#@app.callback(
+#    Output("alert_expired", "is_open"),
+#    [Input("store", "data")]
+#)
+#def product_expired(data):
+#    expiry_dates = pd.to_datetime(df_txhistory['UseByDate'].unique()).date
+#    current_date = dt.now().date()
+#    expired_products = [product for product in df_txhistory['ProductID'].unique() if pd.to_datetime(df_txhistory[df_txhistory['ProductID'] == product]['UseByDate'].iloc[0]).date() <= current_date]
+#    return len(expired_products)>0
 
 @app.callback(
     Output("alert_not_expired", "is_open"),
@@ -531,6 +569,88 @@ def update_treemap_chart(selected_value):
                           plot_bgcolor="#adb5bd", paper_bgcolor='#adb5bd')
         fig.update_traces(marker=dict(cornerradius=5))
         return fig
+
+# Callback to change node size from pull down
+@app.callback(
+    Output( 'network-gragh', 'stylesheet', allow_duplicate = True ),
+    Input( 'nodesize-dropdown', 'value' ),
+    prevent_initial_call = True # This is needy to allow duplication of callback output
+)
+def changeNodeSizePullDown( selected_value ):
+    network_stylesheet_updated = networkgraph_stylesheet
+    network_stylesheet_updated[ 0 ][ 'style' ][ 'width'  ] = selected_value
+    network_stylesheet_updated[ 0 ][ 'style' ][ 'height' ] = selected_value
+    return network_stylesheet_updated
+
+# Callback to change node colour from pull down
+@app.callback(
+    Output( 'network-gragh', 'stylesheet', allow_duplicate = True ),
+    Input( 'nodecolour-dropdown', 'value' ),
+    prevent_initial_call = True # This is needy to allow duplication of callback output
+)
+def changeNodeColourPullDown( selected_value ):
+    network_stylesheet_updated = networkgraph_stylesheet
+    network_stylesheet_updated[ 0 ][ 'style' ][ 'background-color'  ] = selected_value
+
+    # Change labels as well
+    if   selected_value == 'data(colour_owner)':
+        network_stylesheet_updated[ 0 ][ 'style' ][ 'label' ] = 'data(owner)'
+    elif selected_value == 'data(colour_product)':
+        network_stylesheet_updated[ 0 ][ 'style' ][ 'label' ] = 'data(product_name)'
+    elif selected_value == 'data(colour_location)':
+        network_stylesheet_updated[ 0 ][ 'style' ][ 'label' ] = 'data(location)'
+
+    return network_stylesheet_updated
+
+# Callback to update temperature highlighting filter
+@app.callback(
+    Output( 'network-gragh', 'stylesheet', allow_duplicate = True ),
+    Input( 'filtertemperature-input', 'value' ),
+    prevent_initial_call = True # This is needy to allow duplication of callback output
+)
+def setFilterTemperatureInput( input_value ):
+    network_stylesheet_updated = networkgraph_stylesheet
+
+    # Update temperature condition
+    network_stylesheet_updated[ 3 ][ 'selector' ] = setFilterCondition(
+        str( input_value ),
+        'temperature_integer',
+        network_stylesheet_updated[ 3 ][ 'selector' ]
+    )
+
+    return network_stylesheet_updated
+
+# Callback to set weight hilighting filter
+@app.callback(
+    Output( 'network-gragh', 'stylesheet', allow_duplicate = True ),
+    Input( 'filterweight-input', 'value' ),
+    prevent_initial_call = True # This is needy to allow duplication of callback output
+)
+def setFilterWeightInput( input_value ):
+    network_stylesheet_updated = networkgraph_stylesheet
+
+    # Update temperature condition
+    network_stylesheet_updated[ 3 ][ 'selector' ] = setFilterCondition(
+        str( input_value ),
+        'weight_integer',
+        network_stylesheet_updated[ 3 ][ 'selector' ]
+    )
+
+    return network_stylesheet_updated
+
+# Callback to reset network graph style into default
+@app.callback(
+    Output( 'network-gragh', 'stylesheet', allow_duplicate = True ),
+    Input( 'reset-button', 'n_clicks' ),
+    prevent_initial_call = True # This is needy to allow duplication of callback output
+)
+def resetNetworkStyleButton( button_n_clicks ):
+    if button_n_clicks > 0 :
+        network_stylesheet_updated = networkgraph_stylesheet
+        condition = '[temperature_integer>999999]'
+        network_stylesheet_updated[ 3 ][ 'selector' ] = condition
+        return network_stylesheet_updated
+
 
 # Run the app
 if __name__ == '__main__':

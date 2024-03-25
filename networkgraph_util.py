@@ -302,7 +302,7 @@ def set_networkgraph_default_stylesheet():
                 'border-color'       : '#211951',
                 'background-color'   : 'data(colour_owner)',
                 'label'              : 'data(owner)',
-                #'font-size'          : '15px',
+                'font-size'          : '50rem',
                 'text-outline-color' : 'white',
                 'text-outline-width' : '2px',
                 #'text-halign'        : 'center',
@@ -356,7 +356,8 @@ def set_networkgraph_tab_layout():
             'color'           : '#647D87',
             'borderStyle'     : 'solid',
             'borderColor'     : '#647D87',
-            'background'      : 'rgba(191, 207, 231, .5)',
+            'background'      : 'rgba(191, 207, 231)',
+            #'background'      : 'rgba(191, 207, 231, .5)',
             'borderRadius'    : '10px',
             'overflowX'       : 'scroll'
         },
