@@ -1,0 +1,4 @@
+# gitignore for Dashboard_for_sorfML
+
+# pycache directory
+./__pycache__/

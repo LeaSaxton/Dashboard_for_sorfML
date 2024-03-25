@@ -71,9 +71,9 @@ with open('./tx_monitor_milk_V2.json.txt') as file:
         df_txhistory = df_txhistory.iloc[::-1]
         df_txhistory.drop(df_txhistory[(df_txhistory['AssetStatus']=='Edited') | (df_txhistory['AssetStatus']=='Requested')].index, axis=0, inplace=True)
 
-        # It should be dynamic!!! It should be dynamic!!! It should be dynamic!!! It should be dynamic!!! It should be dynamic!!!
+        # It should be dynamic!!! Will be changed later on!!! It should be dynamic!!! Will be changed later on !!! It should be dynamic!!!
         df_txhistory['EventTimestamp'] = ['2024-02-05','2024-02-08','2024-02-10','2024-02-11','2024-02-12','2024-02-13','2024-02-14']
-        # It should be dynamic!!! It should be dynamic!!! It should be dynamic!!! It should be dynamic!!! It should be dynamic!!!
+        # It should be dynamic!!! Will be changed later on!!! It should be dynamic!!! Will be changed later on !!! It should be dynamic!!!
 
         #print(df_txhistory['AssetStatus'])
         # Convert location names to latitude and longitude coordinates
@@ -122,8 +122,6 @@ with open('./tx_monitor_milk_V2.json.txt') as file:
         networkgraph_tab_layout = set_networkgraph_tab_layout()
         print('Fetched network graph tab layout')
         print(networkgraph_tab_layout)
-
-
 
 def is_constant_temperature(product):
     unique_temperatures = df_txhistory['Temperature'].unique()
@@ -534,19 +532,10 @@ def update_treemap_chart(selected_value):
         fig.update_traces(marker=dict(cornerradius=5))
         return fig
 
-
-
 # Run the app
 if __name__ == '__main__':
     port_number=8080
-    print(f"Report Accessible at http://localhost:{port_number}")
+    print(f'Report Accessible at http://localhost:{port_number}')
     app.run_server(debug=True, host='localhost', port=port_number)
 
-
-warnings.filterwarnings("ignore", category=FutureWarning, module="plotly")
-
-# Start the Dash app in local development mode
-if __name__ == '__main__':
-    port_number=8080
-    print(f"Report Accessible at http://localhost:{port_number}")
-    app.run_server(debug=True, host='localhost', port=port_number)
+warnings.filterwarnings('ignore', category=FutureWarning, module='plotly')
