@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import os
 import dash
-from dash import Dash, dash_table, html,dcc
+from dash import Dash, dash_table, html, dcc
 import dash_bootstrap_components as dbc
 import plotly.express as px
 from datetime import datetime as dt 
@@ -160,54 +160,64 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_
 
 app.layout = dbc.Container(
     [
-        dcc.Store(id='store', data=df_txhistory.to_dict('records')),  # Store DataFrame as a list of dictionaries
-        html.H1('Supply Chain Insight Dashboard', style={'color': 'white', 'font-family': 'Arial, sans-serif',
-                                                        'text-align': 'center', 'font-size': '250%', 'font-weight': 'bold', 
-                                                        'text-shadow':'-1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black'}),
+        dcc.Store(id = 'store', data = df_txhistory.to_dict('records')),  # Store DataFrame as a list of dictionaries
+        html.H1('Supply Chain Insight Dashboard',
+            id    = 'dashboard_title',
+            style = {
+                'color'       : 'white',
+                'font-family' : 'Arial, sans-serif',
+                'text-align'  : 'center',
+                'font-size'   : '250%',
+                'font-weight' : 'bold',
+                'text-shadow' : '-1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black'
+            },
+        ),
         html.Hr(),
-        html.Div('Navigate Between Tabs To Explore Your Products Parameters', style={'color': 'white'}),
+        #html.Div('Navigate Between Tabs To Explore Your Products Parameters', style={'color': 'white'}),
         dbc.Alert(
             f"Warning: Temperature values for the following products are not constant: {', '.join(products_with_inconstant_temperature)}",
-            id="alert",
-            color="danger",
-            dismissable=True,
-            is_open=False 
+            id          = 'alert',
+            color       = 'danger',
+            dismissable = True,
+            is_open     = False 
         ),
         dbc.Alert(
             f"Warning: Weight values for the following products are not constant: {', '.join(products_with_inconstant_weight)}",
-            id="alert_weight",
-            color="danger",
-            dismissable=True,
-            is_open=False
+            id          = 'alert_weight',
+            color       = 'danger',
+            dismissable = True,
+            is_open     = False
         ),
         dbc.Alert(
             f"Warning: The following products have expired:{', '.join(expired_products_locations_str)}",
-            id="alert_expired",
-            color="danger",
-            dismissable=True,
-            is_open=False
+            id          = 'alert_expired',
+            color       = 'danger',
+            dismissable = True,
+            is_open     = False
         ),
         dbc.Alert(
-            "No products have expired yet!",
-            id="alert_not_expired",
-            color="success",
-            dismissable=True,
-            is_open=False
+            'No products have expired yet!',
+            id          = 'alert_not_expired',
+            color       = 'success',
+            dismissable = True,
+            is_open     = False
         ),
-        html.Div('Naviguate Between Tabs To Explore Your Products Parameters', style={'color': 'white'}),
+        #html.Div('Naviguate Between Tabs To Explore Your Products Parameters', style={'color': 'white'}),
         dbc.Tabs(
             [
-                dbc.Tab(label = 'Main panels',   tab_id = 'tab1',   label_style={"color": "black"}),
-                dbc.Tab(label = 'Network graph', tab_id = 'tab2',   label_style={"color": "black"}),
+                dbc.Tab(label = 'Main panels',   tab_id = 'tab1', label_style = {'color': 'black'}),
+                dbc.Tab(label = 'Network graph', tab_id = 'tab2', label_style = {'color': 'black'}),
             ],
-            id = 'main-tabs',
+            id         = 'main-tabs',
             active_tab = 'tab1',
+            style      = {}
         ),
-        html.Div(id='main-tab-content', className='p-4'),
+        html.Div(id = 'main-tab-content', className = 'p-4', style = {}),
 
     ],
-    fluid=True,
-    style={'backgroundColor': '#6c757d'}
+    id    = 'main_container',
+    fluid = True,
+    style = {'backgroundColor': '#6c757d'}
 )
 
 # Define callback to render the main content
@@ -270,7 +280,7 @@ def render_main_content(data, active_tab):
             paper_bgcolor = '#adb5bd',
             plot_bgcolor  = '#adb5bd'
         )
-        #To Display Treemap chart 
+        # To Display Treemap chart
         treemap_tab_layout = html.Div([
                 dcc.Dropdown(
                     id     = 'treemap-dropdown',
@@ -423,7 +433,47 @@ def render_main_content(data, active_tab):
         )
     ])
 
+# Callback to change title style if 'tab2' is pushed
+@app.callback(
+    Output('dashboard_title', 'style'),
+    Input('main-tabs', 'active_tab')
+)
+def change_title_style(active_tab):
+    if active_tab == 'tab2':
+        return {
+                'color'       : 'white',
+                'font-family' : 'Arial, sans-serif',
+                'text-align'  : 'center',
+                'font-size'   : '150%',
+                'font-weight' : 'bold',
+                'text-shadow' : '-1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black'
+        }
 
+# Callback to hide tabs buttons if 'tab2' is pushed
+@app.callback(
+    Output('main-tabs', 'style'),
+    Input('main-tabs', 'active_tab')
+)
+def hide_tabs(active_tab):
+    if active_tab == 'tab2':
+        return {
+            'color'            : 'black',
+            'background-color' : 'white',
+            'text-align'       : 'center',
+            'font-size'        : '175%',
+            'display'          : 'none'
+        }
+
+# Callback to to change tab content if 'tab2' is pushed
+@app.callback(
+    Output('main-tab-content', 'style'),
+    Input('main-tabs', 'active_tab')
+)
+def hide_tabs(active_tab):
+    if active_tab == 'tab2':
+        return {
+            'background-color' : 'white',
+        }
 
 @app.callback(
     Output("alert", "is_open"),
