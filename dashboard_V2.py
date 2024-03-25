@@ -27,7 +27,7 @@ def show_content(content):
     print(content) 
 
 #Opening data and save it in pandas dataframe
-with open('./tx_monitor_milk_V2.json.txt') as file:
+with open('./testdata/tx_monitor_milk_V2.json.txt') as file:
         data_json = json.load(file)
         # Pick up 'txHistory' object
         data_txhistory = data_json['txHistory']
