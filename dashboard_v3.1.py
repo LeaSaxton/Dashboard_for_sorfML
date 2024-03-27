@@ -22,6 +22,9 @@ import json
 # Import networkgraph utils
 from networkgraph_util import create_networkgraph_inputdata, get_nodes, set_node_colours, get_edges, set_networkgraph_default_stylesheet, set_networkgraph_tab_layout, setFilterCondition
 
+#Opening the file containing the access token for MapBox
+mapbox_access_token = open("token.txt").read()
+
 # Show content of call back variables
 def show_content(content):
     print(content) 
@@ -230,21 +233,38 @@ def render_main_content(data, active_tab):
 
         # Convert the stored data (list of dictionaries) back to a DataFrame
         df_txhistory = pd.DataFrame(data)
-        #To display map
-        fig_map = px.scatter_geo(
-            df_txhistory,
-            lat        = 'Latitude',
-            lon        = 'Longitude',
-            hover_data = ['ProductID', 'Owner', 'Location', 'Weight', 'Temperature', 'UseByDate'],
-            projection = 'natural earth'
+        hover_text = (
+        "Owner Name: " + df_txhistory['Owner'] + "<br>" +
+        "Product Name: " + df_txhistory['ProductName'] + "<br>" +
+        "Location: " + df_txhistory['Location']
         )
-        # Change color to red and size to 10
-        fig_map.update_traces(marker=dict(color='red', size=10))
-        fig_map.update_layout(
-            title_x       = 0.5,
-            title_text    = f'Products Locations',
-            title_font    = dict(size=30),
-            paper_bgcolor = '#adb5bd'
+        
+        # Create the map with the center at the mean latitude and longitude
+        fig = go.Figure(go.Scattermapbox(
+            lat=df_txhistory['Latitude'],
+            lon=df_txhistory['Longitude'],
+            mode='markers+lines',
+            marker=go.scattermapbox.Marker(
+                size=10, symbol="circle",
+            ),
+            text=hover_text
+        ))
+        fig.update_layout(
+        autosize=True,
+        hovermode='closest',
+        margin=dict(l=20, r=20, t=20, b=20),
+        paper_bgcolor='#adb5bd',
+        mapbox=dict(
+            accesstoken=mapbox_access_token,
+            bearing=0,
+            center=dict(
+                lat=df_txhistory['Latitude'].iloc[0],
+                lon=df_txhistory['Longitude'].iloc[0]
+            ),
+            pitch=0,
+            zoom=3, 
+            style='outdoors'
+        ),
         )
         #To display line graph for Temperature 
         fig_line = px.line(
@@ -295,7 +315,7 @@ def render_main_content(data, active_tab):
 
         return html.Div([
             dbc.Row([
-                dbc.Col(dcc.Graph(figure=fig_map), width=6),
+                dbc.Col(dcc.Graph(figure=fig), width=6),
                 dbc.Col(dcc.Graph(figure=fig_line), width=6)
             ],className='mb-3'), 
             dbc.Row([
