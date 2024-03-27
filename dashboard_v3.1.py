@@ -180,28 +180,32 @@ app.layout = dbc.Container(
             id          = 'alert_temperature',
             color       = 'danger',
             dismissable = True,
-            is_open     = False
+            is_open     = False,
+            duration=20000 
         ),
         dbc.Alert(
             f"Warning: Weight values for the following products are not constant: {', '.join(products_with_inconstant_weight)}",
             id          = 'alert_weight',
             color       = 'danger',
             dismissable = True,
-            is_open     = False
+            is_open     = False,
+            duration=20000
         ),
         dbc.Alert(
             f"Warning: The following products have expired:{', '.join(expired_products_locations_str)}",
             id          = 'alert_expired',
             color       = 'danger',
             dismissable = True,
-            is_open     = False
+            is_open     = False,
+            duration=20000
         ),
         dbc.Alert(
             'No products have expired yet!',
             id          = 'alert_not_expired',
             color       = 'success',
             dismissable = True,
-            is_open     = False
+            is_open     = False,
+            duration=20000
         ),
         #html.Div('Naviguate Between Tabs To Explore Your Products Parameters', style={'color': 'white'}),
         dbc.Tabs(
@@ -213,7 +217,7 @@ app.layout = dbc.Container(
             active_tab = 'tab1',
             style      = {}
         ),
-        html.Div(id = 'main-tab-content', className = 'p-4', style = {}),
+        html.Div(id = 'main-tab-content', className = 'p-4'),
 
     ],
     id    = 'main_container',
@@ -476,7 +480,7 @@ def hide_tabs(active_tab):
     if active_tab == 'tab2':
         return {
             'color'            : 'black',
-            'background-color' : 'white',
+            'background-color' : '#6c757d',
             'text-align'       : 'center',
             'font-size'        : '175%',
             'display'          : 'none'
@@ -490,7 +494,7 @@ def hide_tabs(active_tab):
 def hide_tabs(active_tab):
     if active_tab == 'tab2':
         return {
-            'background-color' : 'white',
+            'background-color' : '#6c757d',
         }
 
 # Callback to to hide temperature alert if 'tab2' is pushed
